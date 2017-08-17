@@ -72,3 +72,15 @@ The `Macrocosm` is a singleton. Since it is implemented as an erlang `GenServer`
   #1
 ```
 Instead of mutating the state of the `Macrocosm` directly, you specify the mutations you want to happen with plain maps called *actions*. These actions get passed to a special function called the *reducer* to decide how every action transforms the state.
+
+## Contribute
+
+Have some ideas? Feedback? Something broken? No workie?
+
+If you have a question, please create an issue and I'll have a look ASAP.
+If you'd like to contribute, please feel free to fork the project, make some changes and create a pull request. Please ensure that you are following some basic guidelines:
+
+* Write tests. The code is well-covered and there are plenty of examples.
+* Write documentation. The project uses [ExDoc](https://github.com/elixir-lang/ex_doc) to automate the generation of documentation.
+* Write examples and DocTests.
+* Keep it clean.
