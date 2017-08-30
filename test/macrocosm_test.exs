@@ -20,6 +20,13 @@ defmodule MacrocosmTest do
 
     assert Macrocosm.animate(Test.ActionCreators.unknown_action) == %{todos: []}
     assert Macrocosm.animate(Test.ActionCreators.add_todo("Hello")) == %{todos: [%{id: 1, text: "Hello"}]}
-    assert assert Macrocosm.get_state == %{todos: [%{id: 1, text: "Hello"}]}
+    assert Macrocosm.get_state == %{todos: [%{id: 1, text: "Hello"}]}
   end
+
+  # test 'it supports multiple subscriptions' do
+  #
+  #   Macrocosm.create(&Test.Reducers.todos/2, %{todos: []})
+  #   listenerA = fn() -> a_calls = a_calls + 1 end
+  #   listenerB = fn() -> b_calls = b_calls + 1 end
+  # end
 end
