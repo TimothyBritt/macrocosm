@@ -37,7 +37,7 @@ defmodule Macrocosm do
       current_listeners: current_listeners
     } = GenServer.call(__MODULE__, :get_store)
 
-    if (next_listeners === current_listeners) do
+    if (next_listeners == current_listeners) do
       GenServer.call(__MODULE__, :copy_listeners)
     end
   end
@@ -72,9 +72,15 @@ defmodule Macrocosm do
     {:reply, reducer, store}
   end
 
-  def handle_call({:animate, action}, _from, %Macrocosm.Struct{reducer: reducer, state: current_state} = store) do
+  def handle_call({:animate, action}, _from, %Macrocosm.Struct{reducer: reducer, state: current_state, next_listeners: next_listeners} = store) do
     new_state = reducer.(current_state, action)
-    {:reply, new_state, %Macrocosm.Struct{ store | reducer: reducer, state: new_state }}
+    next_store = %Macrocosm.Struct{ store | reducer: reducer,
+      state: new_state,
+      current_listeners: next_listeners,
+      next_listeners: next_listeners
+    }
+    Enum.each(next_listeners, fn(listener) -> listener.() end)
+    {:reply, new_state, next_store}
   end
 
   def handle_call(:copy_listeners, _from, %Macrocosm.Struct{current_listeners: current_listeners} = store) do
