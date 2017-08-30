@@ -20,6 +20,56 @@ defmodule MacrocosmTest do
 
     assert Macrocosm.animate(Test.ActionCreators.unknown_action) == %{todos: []}
     assert Macrocosm.animate(Test.ActionCreators.add_todo("Hello")) == %{todos: [%{id: 1, text: "Hello"}]}
-    assert assert Macrocosm.get_state == %{todos: [%{id: 1, text: "Hello"}]}
+    assert Macrocosm.get_state == %{todos: [%{id: 1, text: "Hello"}]}
+  end
+
+  test 'it supports multiple subscriptions' do
+    Macrocosm.create(&Test.Reducers.todos/2, %{todos: []})
+
+    Test.Listeners.create
+    listener_a = &Test.Listeners.listener_a/0
+    listener_b = &Test.Listeners.listener_b/0
+
+    unsubscribe_a = Macrocosm.subscribe(listener_a)
+    assert is_function(unsubscribe_a) == true
+
+    Macrocosm.animate(Test.ActionCreators.unknown_action)
+    assert Test.Listeners.a_calls == 1
+    assert Test.Listeners.b_calls == 0
+
+    Macrocosm.animate(Test.ActionCreators.unknown_action)
+    assert Test.Listeners.a_calls == 2
+    assert Test.Listeners.b_calls == 0
+
+    unsubscribe_b = Macrocosm.subscribe(listener_b)
+    assert is_function(unsubscribe_b) == true
+
+    Macrocosm.animate(Test.ActionCreators.unknown_action)
+    assert Test.Listeners.a_calls == 3
+    assert Test.Listeners.b_calls == 1
+
+    unsubscribe_a.()
+    assert Test.Listeners.a_calls == 3
+    assert Test.Listeners.b_calls == 1
+
+    Macrocosm.animate(Test.ActionCreators.unknown_action)
+    assert Test.Listeners.a_calls == 3
+    assert Test.Listeners.b_calls == 2
+
+    unsubscribe_b.()
+    assert Test.Listeners.a_calls == 3
+    assert Test.Listeners.b_calls == 2
+
+    Macrocosm.animate(Test.ActionCreators.unknown_action)
+    assert Test.Listeners.a_calls == 3
+    assert Test.Listeners.b_calls == 2
+
+    unsubscribe_a = Macrocosm.subscribe(listener_a)
+    assert Test.Listeners.a_calls == 3
+    assert Test.Listeners.b_calls == 2
+
+    Macrocosm.animate(Test.ActionCreators.unknown_action)
+    assert Test.Listeners.a_calls == 4
+    assert Test.Listeners.b_calls == 2
   end
 end
