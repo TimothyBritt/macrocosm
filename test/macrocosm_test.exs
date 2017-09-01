@@ -64,12 +64,46 @@ defmodule MacrocosmTest do
     assert Test.Listeners.a_calls == 3
     assert Test.Listeners.b_calls == 2
 
-    unsubscribe_a = Macrocosm.subscribe(listener_a)
+    Macrocosm.subscribe(listener_a)
     assert Test.Listeners.a_calls == 3
     assert Test.Listeners.b_calls == 2
 
     Macrocosm.animate(Test.ActionCreators.unknown_action)
     assert Test.Listeners.a_calls == 4
     assert Test.Listeners.b_calls == 2
+  end
+
+  test 'it removes listener only once when unsubscribe is called' do
+    Macrocosm.create(&Test.Reducers.todos/2, %{todos: []})
+
+    Test.Listeners.create
+    listener_a = &Test.Listeners.listener_a/0
+    listener_b = &Test.Listeners.listener_b/0
+
+    unsubscribe_a = Macrocosm.subscribe(listener_a)
+    Macrocosm.subscribe(listener_b)
+
+    unsubscribe_a.()
+    unsubscribe_a.()
+
+    Macrocosm.animate(Test.ActionCreators.unknown_action)
+    assert Test.Listeners.a_calls == 0
+    assert Test.Listeners.b_calls == 1
+  end
+
+  test 'it removes only the relevant listener when unsubscribe is called' do
+    Macrocosm.create(&Test.Reducers.todos/2, %{todos: []})
+
+    Test.Listeners.create
+    listener_a = &Test.Listeners.listener_a/0
+
+    Macrocosm.subscribe(listener_a)
+    unsubscribe_second = Macrocosm.subscribe(listener_a)
+
+    unsubscribe_second.()
+    unsubscribe_second.()
+
+    Macrocosm.animate(Test.ActionCreators.unknown_action)
+    assert Test.Listeners.a_calls == 1
   end
 end

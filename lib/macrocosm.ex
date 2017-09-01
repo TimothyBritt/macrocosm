@@ -47,12 +47,14 @@ defmodule Macrocosm do
       raise "Expected listener to be a function."
     end
 
+    listener_struct = %Macrocosm.Listener{uuid: UUID.uuid1(), callback: listener}
+
     Macrocosm.ensure_can_mutate_next_listeners()
-    GenServer.call(__MODULE__, {:attach_listener, listener})
+    GenServer.call(__MODULE__, {:attach_listener, listener_struct})
 
     fn () ->
       Macrocosm.ensure_can_mutate_next_listeners()
-      Macrocosm.detach_listener(listener)
+      Macrocosm.detach_listener(listener_struct)
     end
   end
 
@@ -79,7 +81,7 @@ defmodule Macrocosm do
       current_listeners: next_listeners,
       next_listeners: next_listeners
     }
-    Enum.each(next_listeners, fn(listener) -> listener.() end)
+    Enum.each(next_listeners, fn(listener_struct) -> listener_struct.callback.() end)
     {:reply, new_state, next_store}
   end
 
@@ -87,13 +89,13 @@ defmodule Macrocosm do
     {:reply, :ok, %Macrocosm.Struct{ store | next_listeners: current_listeners }}
   end
 
-  def handle_call({:attach_listener, listener}, _from, %Macrocosm.Struct{next_listeners: next_listeners} = store) do
-    new_listeners = [ listener | next_listeners ]
+  def handle_call({:attach_listener, listener_struct}, _from, %Macrocosm.Struct{next_listeners: next_listeners} = store) do
+    new_listeners = [ listener_struct | next_listeners ]
     {:reply, :ok, %Macrocosm.Struct{ store | next_listeners: new_listeners }}
   end
 
-  def handle_call({:detach_listener, listener}, _from, %Macrocosm.Struct{next_listeners: next_listeners} = store) do
-    new_listeners = List.delete(next_listeners, listener)
+  def handle_call({:detach_listener, listener_struct}, _from, %Macrocosm.Struct{next_listeners: next_listeners} = store) do
+    new_listeners = List.delete(next_listeners, listener_struct)
     {:reply, :ok, %Macrocosm.Struct{ store | next_listeners: new_listeners }}
   end
 end
