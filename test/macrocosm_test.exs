@@ -1,5 +1,5 @@
 defmodule MacrocosmTest do
-  use ExUnit.Case
+  use ExUnit.Case, async: true
   doctest Macrocosm
 
   test 'it throws if the reducer is not a function' do
@@ -106,4 +106,26 @@ defmodule MacrocosmTest do
     Macrocosm.animate(Test.ActionCreators.unknown_action)
     assert Test.Listeners.a_calls == 1
   end
+
+  test 'it supports removing a subscription within a subscription' do
+    Macrocosm.create(&Test.Reducers.todos/2, %{todos: []})
+
+    Test.Listeners.create
+    listener_a = &Test.Listeners.listener_a/0
+    listener_b = &Test.Listeners.listener_b/0
+    listener_c = &Test.Listeners.listener_c/0
+
+    Macrocosm.subscribe(listener_a)
+    Macrocosm.subscribe_once(listener_b)
+    Macrocosm.subscribe(listener_c)
+
+    Macrocosm.animate(Test.ActionCreators.unknown_action)
+    Macrocosm.animate(Test.ActionCreators.unknown_action)
+
+    assert Test.Listeners.a_calls == 2
+    assert Test.Listeners.b_calls == 1
+    assert Test.Listeners.c_calls == 2
+  end
+
+
 end
